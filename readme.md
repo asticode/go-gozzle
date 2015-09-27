@@ -1,6 +1,7 @@
 # About
 
-This is a HTTP client library for the GO programming language (http://golang.org).
+This is a HTTP client library that uses asticode's parallelizator to ensure real parallelization of simultaneous 
+HTTP requests for the GO programming language (http://golang.org).
 
 For the parallelizator see https://github.com/asticode/go-parallelizator
 
@@ -42,6 +43,9 @@ An example of the configuration would be:
     import (
         "github.com/asticode/go-gozzle/gozzle"
     )
+    
+    // Create parallelizator: see https://github.com/asticode/go-parallelizator
+    oParallelizator := <new parallelizator>
 
     // Create Gozzle
     oGozzle, oErr := gozzle.NewGozzle(oGozzleConfiguration, oParallelizator)
