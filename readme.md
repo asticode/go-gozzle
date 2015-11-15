@@ -36,7 +36,7 @@ Run the following command:
     
     // Set the callback that is executed before sending the request
     r.SetBeforeHandler(func(r gozzle.Request) bool {
-        if MyVar == "MyValue" {
+        if r.GetHeader("X-MyHeader") != "MyValue" {
             // Request will be sent
             return true
         } else {
@@ -63,10 +63,14 @@ Run the following command:
         fmt.Println(fmt.Sprintf("Body %s for path %s", string(b), req.Path())
     })
     
+    // Add the request to the request set
+    reqSet.AddRequest(r)
+    
     // Execute the 2 requests asynchronously
     respSet := g.Exec(reqSet)
     
     // Process responses
+    // The first request has not been sent because of the beforeHandler so only one response should be stored
     for _, name := range respSet.Names() {
         req := reqSet.GetRequest(name)
         resp := respSet.GetResponse(name)
