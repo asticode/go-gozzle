@@ -3,158 +3,175 @@ package gozzle
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/asticode/go-parallelizator/parallelizator"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+	"encoding/xml"
 )
 
-type Gozzle struct {
-	Configuration  Configuration
-	parallelizator *parallelizator.Parallelizator
-	client         Client
-}
-
-type Client struct {
-	baseUrl     string
-	maxSizeBody int
-	httpClient  *http.Client
-}
-
-type Method int
-
+// Constants
 const (
-	METHOD_GET Method = iota
-	METHOD_POST
-	METHOD_PATCH
-	METHOD_DELETE
+	MethodGet     string = "GET"
+	MethodPost    string = "POST"
+	MethodPut     string = "PUT"
+	MethodPatch   string = "PATCH"
+	MethodDelete  string = "DELETE"
+	MethodOptions string = "OPTIONS"
+	MethodHead    string = "HEAD"
 )
 
-var methodNames = map[Method]string{
-	METHOD_GET:    "GET",
-	METHOD_POST:   "POST",
-	METHOD_PATCH:  "PATCH",
-	METHOD_DELETE: "DELETE",
+// Gozzle represents an object capable of executing a set of requests
+type Gozzle interface {
+	Exec(reqSet RequestSet) ResponseSet
 }
 
-func NewGozzle(oConfiguration Configuration, oParallelizator *parallelizator.Parallelizator) (*Gozzle, error) {
-	oGozzle := Gozzle{
-		Configuration: oConfiguration,
+// Configuration represents a JSON-friendly gozzle configuration
+type Configuration struct {
+	MaxSizeBody int `json:"max_size_body"`
+}
+
+// NewGozzle creates a new Gozzle object
+func NewGozzle(maxSizeBody int) Gozzle {
+	return &gozzle{
+		maxSizeBody: maxSizeBody,
+		client:      &http.Client{},
 	}
-	oGozzle.new(oParallelizator)
-	oErr := oGozzle.LoadConfiguration()
-	return &oGozzle, oErr
 }
 
-func (oGozzle *Gozzle) LoadConfiguration() error {
-	// Set base url
-	oGozzle.client.baseUrl = oGozzle.Configuration.BaseUrl
-
-	// Return
-	return nil
+// NewGozzleFromConfiguration creates a new Gozzle object based on a configuration
+func NewGozzleFromConfiguration(c Configuration) Gozzle {
+	return NewGozzle(
+		c.MaxSizeBody,
+	)
 }
 
-func (oGozzle *Gozzle) new(oParallelizator *parallelizator.Parallelizator) {
-	// Initialize client
-	oGozzle.client.httpClient = &http.Client{}
-
-	// Set parallelizator
-	oGozzle.parallelizator = oParallelizator
+type gozzle struct {
+	maxSizeBody int
+	client      *http.Client
 }
 
-func (oGozzle Gozzle) Exec(oRequestSet RequestSet) (*ResponseSet, error) {
+// Exec executes a set of requests
+func (g gozzle) Exec(reqSet RequestSet) ResponseSet {
 	// Initialize
-	oResponseSet := ResponseSet{}
+	respSet := responseSet{}
+	reqNames := reqSet.Names()
 
 	// Create wait group
-	oWaitGroup := sync.WaitGroup{}
-	oWaitGroup.Add(len(oRequestSet))
+	wg := sync.WaitGroup{}
+	wg.Add(len(reqNames))
 
 	// Loop through requests
-	aErrors := []error{}
-	for _, oRequest := range oRequestSet {
-		// Exec request
-		oGozzle.execRequestWrapper(oRequest, &oResponseSet, &aErrors, &oWaitGroup)
+	for _, name := range reqNames {
+		req := reqSet.GetRequest(name)
+		go func() {
+			// Execute request
+			resp := g.execRequest(req)
+
+			// Add response
+			if resp != nil {
+				respSet.AddResponse(req, resp)
+			}
+
+			// Update wait group
+			wg.Done()
+		}()
 	}
 
 	// Wait
-	oWaitGroup.Wait()
-
-	// Process errors
-	for _, oErr := range aErrors {
-		if oErr != nil {
-			return &oResponseSet, oErr
-		}
-	}
+	wg.Wait()
 
 	// Return
-	return &oResponseSet, nil
+	return &respSet
 }
 
-func (oGozzle Gozzle) execRequestWrapper(oRequest *Request, oResponseSet *ResponseSet, aErrors *[]error, oWaitGroup *sync.WaitGroup) {
-	oGozzle.parallelizator.AddJob(func() {
-		// Exec
-		*aErrors = append(*aErrors, oGozzle.execRequest(oRequest, oResponseSet))
-
-		// Tell wait group it's done
-		oWaitGroup.Done()
-	})
-}
-
-func (oGozzle Gozzle) execRequest(oRequest *Request, oResponseSet *ResponseSet) error {
+func (g gozzle) execRequest(req Request) Response {
 	// Before handler
-	if oRequest.beforeHandler != nil {
-		bContinue := oRequest.beforeHandler(oRequest)
-		if bContinue != true {
+	if req.BeforeHandler() != nil {
+		cont := req.BeforeHandler()(req)
+		if !cont {
 			return nil
 		}
 	}
 
-	// Get full url
-	sFullUrl := oRequest.endpoint
-	if oGozzle.client.baseUrl != "" {
-		sFullUrl = oGozzle.client.baseUrl + sFullUrl
-	}
-	sFullUrl += "?"
-
-	// Add query parameters
-	for sQueryParameterKey, sQueryParameterValue := range oRequest.query {
-		sFullUrl = sFullUrl + url.QueryEscape(sQueryParameterKey) + "=" + url.QueryEscape(sQueryParameterValue) + "&"
-	}
-	sFullUrl = strings.Trim(sFullUrl, "&")
-
-	// Encode body
-	oBody, oErr := json.Marshal(oRequest.body)
-	if oErr != nil {
-		return oErr
+	// Get body
+	b, e := body(req)
+	if e != nil {
+		return NewResponseError(e)
 	}
 
 	// Create http request
-	oHttpRequest, oErr := http.NewRequest(methodNames[oRequest.method], sFullUrl, bytes.NewBuffer(oBody))
-	if oErr != nil {
-		return oErr
+	httpReq, e := http.NewRequest(
+		req.Method(),
+		req.Path()+query(req),
+		b,
+	)
+	if e != nil {
+		return NewResponseError(e)
 	}
 
-	// Add headers.
-	for sHeaderKey, sHeaderValue := range oRequest.headers {
-		oHttpRequest.Header.Set(sHeaderKey, sHeaderValue)
-	}
+	// Add headers
+	headers(req, httpReq)
+
+	// TODO Add timeout and context
 
 	// Send request
-	oHttpResponse, oErr := oGozzle.client.httpClient.Do(oHttpRequest)
-	if oErr != nil {
-		return oErr
+	httpResp, e := g.client.Do(httpReq)
+	if e != nil {
+		return NewResponseError(e)
 	}
 
-	// Add response
-	(*oResponseSet).addResponse(oRequest, oHttpResponse, oGozzle)
+	// Create response
+	resp := NewResponse(httpResp, g.maxSizeBody)
 
 	// After handler
-	if oRequest.afterHandler != nil {
-		oRequest.afterHandler(oRequest, oResponseSet)
+	if req.AfterHandler() != nil {
+		req.AfterHandler()(req, resp)
 	}
 
 	// Return
-	return nil
+	return resp
+}
+
+func query(r Request) string {
+	var query string
+	if len(r.Query()) > 0 {
+		// Add "?"
+		query += "?"
+
+		// Loop through query parameters
+		for k, v := range r.Query() {
+			query += url.QueryEscape(k) + "=" + url.QueryEscape(v) + "&"
+		}
+
+		// Trim "&"
+		query = strings.Trim(query, "&")
+	}
+	return query
+}
+
+func body(r Request) (io.Reader, error) {
+	// Initialize
+	var body []byte
+	var e error
+
+	// Encode body
+	if r.GetHeader("Content-Type") == "application/xml" {
+		// XML marshall
+		body, e = xml.Marshal(r.Body())
+	} else {
+		// JSON marshall
+		body, e = json.Marshal(r.Body())
+	}
+
+	// Return
+	return bytes.NewBuffer(body), e
+}
+
+func headers(r Request, hr *http.Request) {
+	// Loop through headers
+	for k, v := range r.Headers() {
+		hr.Header.Set(k, v)
+	}
 }

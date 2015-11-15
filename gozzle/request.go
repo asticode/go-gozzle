@@ -1,110 +1,163 @@
 package gozzle
+
 import (
 	"github.com/asticode/go-toolbox/array"
 )
 
-type Request struct {
-	name          string
-	method        Method
-	endpoint      string
-	headers       map[string]string
-	query         map[string]string
-	body          map[string]interface{}
-	beforeHandler func(oRequest *Request) bool
-	afterHandler  func(oRequest *Request, oResponseSet *ResponseSet)
+// Request represents a request sendable by gozzle
+type Request interface {
+	Name() string
+	SetName(n string)
+	Method() string
+	SetMethod(m string)
+	Path() string
+	SetPath(p string)
+	Headers() map[string]string
+	SetHeaders(h map[string]string)
+	AddHeader(k string, v string)
+	GetHeader(k string) string
+	DelHeader(k string)
+	Query() map[string]string
+	SetQuery(q map[string]string)
+	AddQuery(k string, v string)
+	GetQuery(k string) string
+	DelQuery(k string)
+	Body() interface{}
+	SetBody(b interface{})
+	BeforeHandler() func(r Request) bool
+	SetBeforeHandler(f func(r Request) bool)
+	AfterHandler() func(req Request, resp Response)
+	SetAfterHandler(f func(req Request, resp Response))
 }
 
-func (oRequest Request) Name() string {
-	return oRequest.name
-}
-
-func (oRequest *Request) SetName(sName string) {
-	oRequest.name = sName
-}
-
-func (oRequest Request) Method() Method {
-	return oRequest.method
-}
-
-func (oRequest *Request) SetMethod(oMethod Method) {
-	oRequest.method = oMethod
-}
-
-func (oRequest Request) Endpoint() string {
-	return oRequest.endpoint
-}
-
-func (oRequest *Request) SetEndpoint(sEndpoint string) {
-	oRequest.endpoint = sEndpoint
-}
-
-func (oRequest Request) Headers() map[string]string {
-	return oRequest.headers
-}
-
-func (oRequest *Request) SetHeaders(aHeaders map[string]string) {
-	oRequest.headers = array.CloneMap(aHeaders)
-}
-
-func (oRequest *Request) AddHeader(sKey string, sValue string) {
-	oRequest.headers[sKey] = sValue
-}
-
-func (oRequest Request) GetHeader(sKey string) string {
-	return oRequest.headers[sKey]
-}
-
-func (oRequest *Request) DelHeader(sKey string) {
-	delete(oRequest.headers, sKey)
-}
-
-func (oRequest Request) Query() map[string]string {
-	return oRequest.query
-}
-
-func (oRequest *Request) SetQuery(aQuery map[string]string) {
-	oRequest.query = array.CloneMap(aQuery)
-}
-
-func (oRequest *Request) AddQuery(sKey string, sValue string) {
-	oRequest.query[sKey] = sValue
-}
-
-func (oRequest Request) GetQuery(sKey string) string {
-	return oRequest.query[sKey]
-}
-
-func (oRequest *Request) DelQuery(sKey string) {
-	delete(oRequest.query, sKey)
-}
-
-func (oRequest Request) Body() map[string]interface{} {
-	return oRequest.body
-}
-
-func (oRequest *Request) SetBody(oBody map[string]interface{}) {
-	oRequest.body = make(map[string]interface{})
-	for sKey, oValue := range oBody {
-		oRequest.body[sKey] = oValue
+// NewRequest creates a new request
+func NewRequest(name string, method string, path string) Request {
+	return &request{
+		name:   name,
+		method: method,
+		path:   path,
+		headers: make(map[string]string),
+		query: make(map[string]string),
 	}
 }
 
-func (oRequest *Request) AddBody(sKey string, oValue interface{}) {
-	oRequest.body[sKey] = oValue
+type request struct {
+	name          string
+	method        string
+	path          string
+	headers       map[string]string
+	query         map[string]string
+	body          interface{}
+	beforeHandler func(r Request) bool
+	afterHandler  func(r Request, resp Response)
 }
 
-func (oRequest Request) GetBody(sKey string) interface{} {
-	return oRequest.body[sKey]
+// Name returns the request name
+func (r *request) Name() string {
+	return r.name
 }
 
-func (oRequest *Request) DelBody(sKey string) {
-	delete(oRequest.body, sKey)
+// SetName sets the request name
+func (r *request) SetName(n string) {
+	r.name = n
 }
 
-func (oRequest *Request) SetBeforeHandler(fHandler func(oRequest *Request) bool) {
-	oRequest.beforeHandler = fHandler
+// Method returns the request method
+func (r *request) Method() string {
+	return r.method
 }
 
-func (oRequest *Request) SetAfterHandler(fHandler func(oRequest *Request, oResponseSet *ResponseSet)) {
-	oRequest.afterHandler = fHandler
+// SetMethod sets the request method
+func (r *request) SetMethod(m string) {
+	r.method = m
+}
+
+// Path returns the request path
+func (r *request) Path() string {
+	return r.path
+}
+
+// SetPath sets the request path
+func (r *request) SetPath(p string) {
+	r.path = p
+}
+
+// Headers returns the request headers
+func (r *request) Headers() map[string]string {
+	return r.headers
+}
+
+// SetHeaders sets the whole request headers
+func (r *request) SetHeaders(h map[string]string) {
+	r.headers = array.CloneMap(h)
+}
+
+// AddHeader adds a new header for a specific key
+func (r *request) AddHeader(k string, v string) {
+	r.headers[k] = v
+}
+
+// GetHeader returns the value of a specific header key
+func (r *request) GetHeader(k string) string {
+	return r.headers[k]
+}
+
+// DelHeader deletes a specific header key
+func (r *request) DelHeader(k string) {
+	delete(r.headers, k)
+}
+
+// Query returns the whole request query
+func (r *request) Query() map[string]string {
+	return r.query
+}
+
+// SetQuery sets the whole request query
+func (r *request) SetQuery(q map[string]string) {
+	r.query = array.CloneMap(q)
+}
+
+// AddQuery adds a new query for a specific key
+func (r *request) AddQuery(k string, v string) {
+	r.query[k] = v
+}
+
+// GetQuery returns the value of a specific query
+func (r *request) GetQuery(k string) string {
+	return r.query[k]
+}
+
+// DelQuery deletes a specific query key
+func (r *request) DelQuery(k string) {
+	delete(r.query, k)
+}
+
+// Body returns the whole request body
+func (r *request) Body() interface{} {
+	return r.body
+}
+
+// SetBody sets the whole request body
+func (r *request) SetBody(b interface{}) {
+	r.body = b
+}
+
+// SetBeforeHandler sets the handler executed before sending the request
+func (r *request) SetBeforeHandler(f func(r Request) bool) {
+	r.beforeHandler = f
+}
+
+// BeforeHandler returns the handler executed before sending the request
+func (r *request) BeforeHandler() func(r Request) bool {
+	return r.beforeHandler
+}
+
+// SetAfterHandler sets the handler executed after sending the request
+func (r *request) SetAfterHandler(f func(req Request, resp Response)) {
+	r.afterHandler = f
+}
+
+// SetAfterHandler returns the handler executed after sending the request
+func (r *request) AfterHandler() func(req Request, resp Response) {
+	return r.afterHandler
 }
