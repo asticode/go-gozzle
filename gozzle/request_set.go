@@ -1,3 +1,7 @@
+// Copyright 2015, Quentin RENARD. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package gozzle
 
 // RequestSet represents a set of sendable requests

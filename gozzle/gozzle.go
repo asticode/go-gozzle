@@ -1,14 +1,18 @@
+// Copyright 2015, Quentin RENARD. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package gozzle
 
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
-	"encoding/xml"
 )
 
 // Constants
@@ -55,7 +59,7 @@ type gozzle struct {
 // Exec executes a set of requests
 func (g gozzle) Exec(reqSet RequestSet) ResponseSet {
 	// Initialize
-	respSet := responseSet{}
+	respSet := NewResponseSet()
 	reqNames := reqSet.Names()
 
 	// Create wait group
@@ -83,7 +87,7 @@ func (g gozzle) Exec(reqSet RequestSet) ResponseSet {
 	wg.Wait()
 
 	// Return
-	return &respSet
+	return respSet
 }
 
 func (g gozzle) execRequest(req Request) Response {

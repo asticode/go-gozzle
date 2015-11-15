@@ -1,12 +1,18 @@
+// Copyright 2015, Quentin RENARD. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package gozzle
+
 import (
-	"testing"
-	"errors"
-	"github.com/stretchr/testify/assert"
-	"net/http"
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewResponseError(t *testing.T) {
@@ -28,9 +34,9 @@ func TestNewResponseInvalidStatusCode(t *testing.T) {
 	assert.EqualError(t, httpRespError.Errors()[0], ErrInvalidStatusCode.Error())
 }
 
-type mockedCloser struct {}
+type mockedCloser struct{}
 
-func (m mockedCloser) Close() error {return nil}
+func (m mockedCloser) Close() error { return nil }
 
 func mockedIoReaderCloser(b []byte) io.ReadCloser {
 	return struct {

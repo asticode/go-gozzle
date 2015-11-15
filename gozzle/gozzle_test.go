@@ -1,11 +1,17 @@
+// Copyright 2015, Quentin RENARD. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package gozzle
+
 import (
-	"testing"
-	"net/http"
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net/http/httptest"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExec(t *testing.T) {
@@ -134,7 +140,7 @@ func TestQuery(t *testing.T) {
 	// Initialize
 	r1 := request{
 		query: map[string]string{
-			"a": "b",
+			"a":     "b",
 			"ké@lù": "ùl@ék",
 		},
 	}

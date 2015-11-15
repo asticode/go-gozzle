@@ -1,3 +1,7 @@
+// Copyright 2015, Quentin RENARD. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package gozzle
 
 import (
@@ -33,11 +37,11 @@ type Request interface {
 // NewRequest creates a new request
 func NewRequest(name string, method string, path string) Request {
 	return &request{
-		name:   name,
-		method: method,
-		path:   path,
+		name:    name,
+		method:  method,
+		path:    path,
 		headers: make(map[string]string),
-		query: make(map[string]string),
+		query:   make(map[string]string),
 	}
 }
 

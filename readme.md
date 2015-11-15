@@ -1,42 +1,14 @@
 # About
 
-This is a HTTP client library that uses asticode's parallelizator to ensure real parallelization of simultaneous 
-HTTP requests for the GO programming language (http://golang.org).
+[![godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/asticode/go-gozzle/gozzle)
 
-For the parallelizator see https://github.com/asticode/go-parallelizator
+`go-gozzle` is an HTTP client wrapper that ease sending multiple requests asynchronously and processing their respective responses for the GO programming language (http://golang.org).
 
-# Dependencies
+# Install `go-gozzle`
 
-    github.com/asticode/go-parallelizator/parallelizator
-    github.com/asticode/go-toolbox/array
-
-# Installing
-
-## Using *go get*
+Run the following command:
 
     $ go get github.com/asticode/go-gozzle/gozzle
-    
-After this command *go-gozzle* is ready to use. Its source will be in:
-
-    $GOPATH/src/github.com/asticode/go-gozzle/gozzle
-    
-# Configuration
-
-Best is to use JSON configuration:
-
-    {
-        "base_url": "BASE_URL"
-    }
-    
-And decode it:
-
-    oGozzleConfiguration = json.UnMarshall(sConfiguration)
-    
-An example of the configuration would be:
-
-    {
-        "base_url": "http://mysite.com"
-    }
     
 # Example
 
@@ -44,29 +16,26 @@ An example of the configuration would be:
         "github.com/asticode/go-gozzle/gozzle"
     )
     
-    // Create parallelizator: see https://github.com/asticode/go-parallelizator
-    oParallelizator := <new parallelizator>
-
-    // Create Gozzle
-    oGozzle, oErr := gozzle.NewGozzle(oGozzleConfiguration, oParallelizator)
+    // Create gozzle without a maximum body size for the response
+    g := gozzle.NewGozzle(0)
     
-    // Initialize request set
-    oRequestSet := gozzle.RequestSet{}
+    // Create a request set
+    reqSet := gozzle.NewRequestSet()
     
-    // Add the first request
-    oRequestSet.AddRequest("my-first-request", gozzle.METHOD_GET, "/my-first-endpoint")
+    // Create the first request
+    r := NewRequest("my-first-request", gozzle.MethodGet, "/my-first-endpoint")
     
-    // Set headers of the first request
-    oRequestSet["my-first-request"].AddHeader("X-MyHeader", "MyValue")
+    // Add headers
+    r.AddHeader("X-MyHeader", "MyValue")
     
-    // Set query of the first request
-    oRequestSet["my-first-request"].SetQuery(map[string]string{
+    // Add query
+    r.SetQuery(map[string]string{
         "api_key": "my_api_key",
         "access_token": "my_access_token",
     })
     
-    // Set callback executed before sending the first request
-    oRequestSet["my-first-request"].SetBeforeHandler(func(oRequest *gozzle.Request) bool {
+    // Set the callback that is executed before sending the request
+    r.SetBeforeHandler(func(r gozzle.Request) bool {
         if MyVar == "MyValue" {
             // Request will be sent
             return true
@@ -76,29 +45,35 @@ An example of the configuration would be:
         }
     })
     
-    // Add the second request
-    oRequestSet.AddRequest("my-second-request", gozzle.METHOD_POST, "/my-second-endpoint")
+    // Add the request to the request set
+    reqSet.AddRequest(r)
     
-    // Set body of the second request
-    oRequestSet["my-second-request"].SetBody(map[string]interface{}{
+    // Create the second request
+    r = NewRequest("my-second-request", gozzle.MethodPost, "/my-second-endpoint")
+    
+    // Add a body to the request
+    r.SetBody(map[string]interface{}{
         "name": "Asticode",
         "email": "test@asticode.com",
     })
     
-    // Set callback executed after sending the second request
-    oRequestSet["my-second-request"].SetAfterHandler(func(oRequest *gozzle.Request, oResponseSet *gozzle.ResponseSet) bool {
-        fmt.Println((*(*oResponseSet)[oRequest.Name()].Body()))
+    // Set the callback that is executed after sending the request
+    r.SetAfterHandler(func(req gozzle.Request, resp gozzle.Response) {
+        b, e := ioutil.ReadAll(resp.BodyReader())
+        fmt.Println(fmt.Sprintf("Body %s for path %s", string(b), req.Path())
     })
     
-    // Exec request set
-    oResponseSet, oErr := oGozzle.Exec(oRequestSet)
+    // Execute the 2 requests asynchronously
+    respSet := g.Exec(reqSet)
     
     // Process responses
-    for sResponseName, oResponse := range *oResponseSet {
-        if oResponse.IsError() {
-            fmt.Println(fmt.Sprintf("Error in %s request", sResponseName))
+    for _, name := range respSet.Names() {
+        req := reqSet.GetRequest(name)
+        resp := respSet.GetResponse(name)
+        if len(resp.Errors()) > 0 {
+            fmt.Println(fmt.Sprintf("Error in request to %s", req.Path()))
         } else {
-            fmt.Println(fmt.Sprintf("Request %s was successful", sResponseName))
+            fmt.Println(fmt.Sprintf("Request to %s was successful", req.Path()))
         }
     }
     

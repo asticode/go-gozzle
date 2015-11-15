@@ -1,8 +1,14 @@
+// Copyright 2015, Quentin RENARD. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package gozzle
+
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"sort"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRequestSet(t *testing.T) {
@@ -15,7 +21,7 @@ func TestRequestSet(t *testing.T) {
 	}
 
 	// Assert names
-	e1 := []string{"1","2","3","4"}
+	e1 := []string{"1", "2", "3", "4"}
 	n1 := reqSet.Names()
 	sort.Strings(n1)
 	assert.EqualValues(t, e1, n1)
@@ -24,7 +30,7 @@ func TestRequestSet(t *testing.T) {
 	reqSet.DelRequest("2")
 
 	// Assert names
-	e2 := []string{"1","3","4"}
+	e2 := []string{"1", "3", "4"}
 	n2 := reqSet.Names()
 	sort.Strings(n2)
 	assert.EqualValues(t, e2, n2)
