@@ -122,13 +122,6 @@ func (g gozzle) execRequest(req Request) Response {
 
 	// TODO Add timeout and context
 
-	// TODO Remove
-	w, e := syslog.New(syslog.LOG_ERR, "bite")
-	defer w.Close()
-	if httpReq.Method != "GET" && httpReq.Method != "POST" && httpReq.Method != "PATCH" && httpReq.Method != "PUT" && httpReq.Method != "DELETE" {
-		w.Err(fmt.Sprintf("Sending wrong HTTP Verb <%s>", httpReq.Method))
-	}
-
 	// Send request
 	httpResp, e := g.client.Do(httpReq)
 	if e != nil {
