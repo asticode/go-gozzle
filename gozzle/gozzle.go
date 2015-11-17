@@ -13,8 +13,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"log/syslog"
-	"fmt"
 )
 
 // Constants
