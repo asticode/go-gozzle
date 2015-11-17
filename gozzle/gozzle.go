@@ -13,6 +13,8 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"log/syslog"
+	"fmt"
 )
 
 // Constants
@@ -119,6 +121,11 @@ func (g gozzle) execRequest(req Request) Response {
 	headers(req, httpReq)
 
 	// TODO Add timeout and context
+
+	// TODO Remove
+	w, e := syslog.New(syslog.LOG_ERR, "bite")
+	defer w.Close()
+	w.Err(fmt.Sprintf("Sending HTTP Verb <%s>", httpReq.Method))
 
 	// Send request
 	httpResp, e := g.client.Do(httpReq)
