@@ -161,12 +161,14 @@ func body(r Request) (io.Reader, error) {
 	var e error
 
 	// Encode body
-	if r.GetHeader("Content-Type") == "application/xml" {
-		// XML marshall
-		body, e = xml.Marshal(r.Body())
-	} else {
-		// JSON marshall
-		body, e = json.Marshal(r.Body())
+	if r.Body() != nil {
+		if r.GetHeader("Content-Type") == "application/xml" {
+			// XML marshall
+			body, e = xml.Marshal(r.Body())
+		} else {
+			// JSON marshall
+			body, e = json.Marshal(r.Body())
+		}
 	}
 
 	// Return

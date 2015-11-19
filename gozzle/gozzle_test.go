@@ -147,7 +147,7 @@ func TestQuery(t *testing.T) {
 	r2 := request{}
 
 	// Assert
-	assert.Contains(t, "?a=b&k%C3%A9%40l%C3%B9=%C3%B9l%40%C3%A9k", query(&r1))
+	assert.Contains(t, "?a=b&k%C3%A9%40l%C3%B9=%C3%B9l%40%C3%A9k?k%C3%A9%40l%C3%B9=%C3%B9l%40%C3%A9k&a=b", query(&r1))
 	assert.Empty(t, query(&r2))
 }
 
@@ -172,6 +172,23 @@ func TestBody(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, "{\"test\":\"message\"}", string(c))
+}
+
+func TestBodyEmpty(t *testing.T) {
+	r := request{
+		body: interface{}(nil),
+	}
+
+	// Get body reader
+	b, e := body(&r)
+	assert.NoError(t, e)
+
+	// Read body
+	c, e := ioutil.ReadAll(b)
+	assert.NoError(t, e)
+
+	// Assert
+	assert.Equal(t, "", string(c))
 }
 
 func TestHeaders(t *testing.T) {
