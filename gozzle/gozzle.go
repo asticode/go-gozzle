@@ -68,8 +68,7 @@ func (g gozzle) Exec(reqSet RequestSet) ResponseSet {
 
 	// Loop through requests
 	for _, name := range reqNames {
-		req := reqSet.GetRequest(name)
-		go func() {
+		go func(req Request) {
 			// Execute request
 			resp := g.execRequest(req)
 
@@ -80,7 +79,7 @@ func (g gozzle) Exec(reqSet RequestSet) ResponseSet {
 
 			// Update wait group
 			wg.Done()
-		}()
+		}(reqSet.GetRequest(name))
 	}
 
 	// Wait
