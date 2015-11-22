@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"bytes"
 )
 
 func TestExec(t *testing.T) {
@@ -189,6 +190,30 @@ func TestBodyEmpty(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, "", string(c))
+}
+
+func TestBodyReader(t *testing.T) {
+	// Initialize
+	r := request{
+		body: map[string]string{
+			"test": "message",
+		},
+		bodyReader: bytes.NewBuffer([]byte("{\"test\":\"message_reader\"}")),
+		headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+
+	// Get body reader
+	b, e := body(&r)
+	assert.NoError(t, e)
+
+	// Read body
+	c, e := ioutil.ReadAll(b)
+	assert.NoError(t, e)
+
+	// Assert
+	assert.Equal(t, "{\"test\":\"message_reader\"}", string(c))
 }
 
 func TestHeaders(t *testing.T) {
