@@ -6,6 +6,7 @@ package gozzle
 
 import (
 	"github.com/asticode/go-toolbox/array"
+	"io"
 )
 
 // Request represents a request sendable by gozzle
@@ -28,6 +29,8 @@ type Request interface {
 	DelQuery(k string)
 	Body() interface{}
 	SetBody(b interface{})
+	BodyReader() io.Reader
+	SetBodyReader(reader io.Reader)
 	BeforeHandler() func(r Request) bool
 	SetBeforeHandler(f func(r Request) bool)
 	AfterHandler() func(req Request, resp Response)
@@ -52,6 +55,7 @@ type request struct {
 	headers       map[string]string
 	query         map[string]string
 	body          interface{}
+	bodyReader	  io.Reader
 	beforeHandler func(r Request) bool
 	afterHandler  func(r Request, resp Response)
 }
@@ -144,6 +148,16 @@ func (r *request) Body() interface{} {
 // SetBody sets the whole request body
 func (r *request) SetBody(b interface{}) {
 	r.body = b
+}
+
+// BodyReader returns the body reader
+func (r *request) BodyReader() io.Reader {
+	return r.bodyReader
+}
+
+// SetBodyReader sets the body reader
+func (r *request) SetBodyReader(reader io.Reader) {
+	r.bodyReader = reader
 }
 
 // SetBeforeHandler sets the handler executed before sending the request

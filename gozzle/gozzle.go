@@ -160,7 +160,10 @@ func body(r Request) (io.Reader, error) {
 	var e error
 
 	// Encode body
-	if r.Body() != nil {
+	if r.BodyReader() != nil {
+		return r.BodyReader(), e
+	} else if r.Body() != nil {
+		// Get body reader
 		if r.GetHeader("Content-Type") == "application/xml" {
 			// XML marshall
 			body, e = xml.Marshal(r.Body())
