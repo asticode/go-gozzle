@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sort"
 )
 
 // Constants
@@ -143,9 +144,16 @@ func query(r Request) string {
 		// Add "?"
 		query += "?"
 
-		// Loop through query parameters
-		for k, v := range r.Query() {
-			query += url.QueryEscape(k) + "=" + url.QueryEscape(v) + "&"
+		// Make sure query parameters are sorted
+		var keys []string
+		for k, _ := range r.Query() {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		// Loop through keys
+		for _, k := range keys {
+			query += url.QueryEscape(k) + "=" + url.QueryEscape(r.GetQuery(k)) + "&"
 		}
 
 		// Trim "&"

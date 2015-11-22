@@ -137,7 +137,25 @@ func TestExecRequestError(t *testing.T) {
 	assert.EqualError(t, respSet.GetResponse("test2").Errors()[0], "Get test: unsupported protocol scheme \"\"")
 }
 
-func TestQuery(t *testing.T) {
+func TestQuerySorted(t *testing.T) {
+	// Initialize
+	r1 := request{
+		query: map[string]string{
+			"2": "b",
+			"1":     "a",
+			"3": "c",
+			"5": "e",
+			"4": "d",
+		},
+	}
+	r2 := request{}
+
+	// Assert
+	assert.Equal(t, "?1=a&2=b&3=c&4=d&5=e", query(&r1))
+	assert.Empty(t, query(&r2))
+}
+
+func TestQueryEncoding(t *testing.T) {
 	// Initialize
 	r1 := request{
 		query: map[string]string{
@@ -148,7 +166,7 @@ func TestQuery(t *testing.T) {
 	r2 := request{}
 
 	// Assert
-	assert.Contains(t, "?a=b&k%C3%A9%40l%C3%B9=%C3%B9l%40%C3%A9k?k%C3%A9%40l%C3%B9=%C3%B9l%40%C3%A9k&a=b", query(&r1))
+	assert.Equal(t, "?a=b&k%C3%A9%40l%C3%B9=%C3%B9l%40%C3%A9k", query(&r1))
 	assert.Empty(t, query(&r2))
 }
 
