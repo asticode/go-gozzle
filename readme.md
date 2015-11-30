@@ -69,6 +69,9 @@ Run the following command:
     // Execute the 2 requests asynchronously
     respSet := g.Exec(reqSet)
     
+    // Make sure the responses are properly closed
+    defer respSet.Close()
+    
     // Process responses
     // The first request has not been sent because of the beforeHandler so only one response should be stored
     for _, name := range respSet.Names() {
