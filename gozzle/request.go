@@ -5,8 +5,9 @@
 package gozzle
 
 import (
-	"github.com/asticode/go-toolbox/array"
 	"io"
+
+	"github.com/asticode/go-toolbox/array"
 )
 
 // Request represents a request sendable by gozzle
@@ -55,7 +56,7 @@ type request struct {
 	headers       map[string]string
 	query         map[string]string
 	body          interface{}
-	bodyReader	  io.Reader
+	bodyReader    io.Reader
 	beforeHandler func(r Request) bool
 	afterHandler  func(r Request, resp Response)
 }

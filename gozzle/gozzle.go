@@ -11,9 +11,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
-	"sort"
 )
 
 // Constants

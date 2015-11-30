@@ -7,8 +7,8 @@ package gozzle
 import (
 	"errors"
 	"io"
-	"net/http"
 	"io/ioutil"
+	"net/http"
 )
 
 // Variables

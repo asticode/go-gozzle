@@ -11,8 +11,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"bytes"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExec(t *testing.T) {
@@ -142,7 +143,7 @@ func TestQuerySorted(t *testing.T) {
 	r1 := request{
 		query: map[string]string{
 			"2": "b",
-			"1":     "a",
+			"1": "a",
 			"3": "c",
 			"5": "e",
 			"4": "d",
