@@ -97,6 +97,7 @@ func (r *response) BodyReader() io.ReadCloser {
 	return r.originalResponse.Body
 }
 
+// Close closes the response
 func (r *response) Close() error {
 	return r.originalResponse.Body.Close()
 }

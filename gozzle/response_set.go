@@ -10,6 +10,7 @@ type ResponseSet interface {
 	AddResponse(req Request, resp Response)
 	GetResponse(name string) Response
 	DelResponse(name string)
+	Close() map[string]error
 }
 
 // NewResponseSet creates a new response set
@@ -41,4 +42,13 @@ func (respSet *responseSet) GetResponse(name string) Response {
 // DelResponse removes a request from the request set
 func (respSet *responseSet) DelResponse(name string) {
 	delete((*respSet), name)
+}
+
+// Close closes the responses in the response set
+func (respSet *responseSet) Close() map[string]error {
+	errors := make(map[string]error)
+	for k, v := range respSet {
+		errors[k] = v.Close()
+	}
+	return errors
 }
