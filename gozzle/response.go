@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"io/ioutil"
 )
 
 // Variables
@@ -22,6 +23,7 @@ type Response interface {
 	StatusCode() int
 	Header() http.Header
 	BodyReader() io.ReadCloser
+	Close() error
 }
 
 // NewResponseError creates a new response with an error set by default
@@ -41,12 +43,18 @@ func NewResponse(or *http.Response, maxSizeBody int) Response {
 	// Initialize
 	r := response{
 		originalResponse: or,
-		maxSizeBody:      maxSizeBody,
 	}
 
 	// Check status code
 	if r.StatusCode() < 200 || r.StatusCode() >= 300 {
 		r.errors = append(r.errors, ErrInvalidStatusCode)
+	}
+
+	// Update body reader
+	if maxSizeBody > 0 {
+		r.originalResponse.Body = ioutil.NopCloser(
+			io.LimitReader(r.originalResponse.Body, int64(maxSizeBody)),
+		)
 	}
 
 	// Return
@@ -55,7 +63,6 @@ func NewResponse(or *http.Response, maxSizeBody int) Response {
 
 type response struct {
 	errors           []error
-	maxSizeBody      int
 	originalResponse *http.Response
 }
 
@@ -87,11 +94,9 @@ func (r *response) Header() http.Header {
 
 // Body returns the response body
 func (r *response) BodyReader() io.ReadCloser {
-	if r.maxSizeBody > 0 {
-		return struct {
-			io.Reader
-			io.Closer
-		}{io.LimitReader(r.originalResponse.Body, int64(r.maxSizeBody)), r.originalResponse.Body}
-	}
 	return r.originalResponse.Body
+}
+
+func (r *response) Close() error {
+	return r.originalResponse.Body.Close()
 }
