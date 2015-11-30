@@ -47,7 +47,7 @@ func (respSet *responseSet) DelResponse(name string) {
 // Close closes the responses in the response set
 func (respSet *responseSet) Close() map[string]error {
 	errors := make(map[string]error)
-	for k, v := range respSet {
+	for k, v := range *respSet {
 		errors[k] = v.Close()
 	}
 	return errors
