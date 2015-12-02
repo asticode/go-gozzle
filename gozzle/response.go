@@ -9,11 +9,13 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"bytes"
 )
 
 // Variables
 var (
 	ErrInvalidStatusCode = errors.New("Invalid status code")
+	ErrNilOriginalResponse = errors.New("Nil original response")
 )
 
 // Response represents a response received by gozzle after sending a request
@@ -89,15 +91,24 @@ func (r *response) StatusCode() int {
 
 // Header returns the http.Header object of the http.Response
 func (r *response) Header() http.Header {
+	if r.originalResponse == nil {
+		return http.Header{}
+	}
 	return r.originalResponse.Header
 }
 
 // Body returns the response body
 func (r *response) BodyReader() io.ReadCloser {
+	if r.originalResponse == nil {
+		return ioutil.NopCloser(bytes.NewReader([]byte{}))
+	}
 	return r.originalResponse.Body
 }
 
 // Close closes the response
 func (r *response) Close() error {
+	if r.originalResponse == nil {
+		return ErrNilOriginalResponse
+	}
 	return r.originalResponse.Body.Close()
 }
