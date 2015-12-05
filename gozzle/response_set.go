@@ -7,9 +7,9 @@ package gozzle
 // ResponseSet represents a set of responses
 type ResponseSet interface {
 	Names() []string
-	AddResponse(req Request, resp Response)
+	AddResponse(req Request, resp Response) ResponseSet
 	GetResponse(name string) Response
-	DelResponse(name string)
+	DelResponse(name string) ResponseSet
 	Close() map[string]error
 }
 
@@ -30,8 +30,9 @@ func (respSet *responseSet) Names() []string {
 }
 
 // AddResponse adds a new response to the response set
-func (respSet *responseSet) AddResponse(req Request, resp Response) {
+func (respSet *responseSet) AddResponse(req Request, resp Response) ResponseSet {
 	(*respSet)[req.Name()] = resp
+	return respSet
 }
 
 // GetResponse returns a request based on its name
@@ -40,8 +41,9 @@ func (respSet *responseSet) GetResponse(name string) Response {
 }
 
 // DelResponse removes a request from the request set
-func (respSet *responseSet) DelResponse(name string) {
+func (respSet *responseSet) DelResponse(name string) ResponseSet {
 	delete((*respSet), name)
+	return respSet
 }
 
 // Close closes the responses in the response set

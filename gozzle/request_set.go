@@ -7,9 +7,9 @@ package gozzle
 // RequestSet represents a set of sendable requests
 type RequestSet interface {
 	Names() []string
-	AddRequest(r Request)
+	AddRequest(r Request) RequestSet
 	GetRequest(name string) Request
-	DelRequest(name string)
+	DelRequest(name string) RequestSet
 }
 
 // NewRequestSet creates a new request set
@@ -29,8 +29,9 @@ func (reqSet *requestSet) Names() []string {
 }
 
 // AddRequest adds a new request to the request set
-func (reqSet *requestSet) AddRequest(r Request) {
+func (reqSet *requestSet) AddRequest(r Request) RequestSet {
 	(*reqSet)[r.Name()] = r
+	return reqSet
 }
 
 // GetRequest returns a request based on its name
@@ -39,6 +40,7 @@ func (reqSet *requestSet) GetRequest(name string) Request {
 }
 
 // DelRequest removes a request from the request set
-func (reqSet *requestSet) DelRequest(name string) {
+func (reqSet *requestSet) DelRequest(name string) RequestSet {
 	delete((*reqSet), name)
+	return reqSet
 }

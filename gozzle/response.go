@@ -5,16 +5,16 @@
 package gozzle
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"bytes"
 )
 
 // Variables
 var (
-	ErrInvalidStatusCode = errors.New("Invalid status code")
+	ErrInvalidStatusCode   = errors.New("Invalid status code")
 	ErrNilOriginalResponse = errors.New("Nil original response")
 )
 
