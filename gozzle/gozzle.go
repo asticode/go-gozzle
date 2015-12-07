@@ -30,6 +30,8 @@ const (
 // Gozzle represents an object capable of executing a set of requests
 type Gozzle interface {
 	Exec(reqSet RequestSet) ResponseSet
+	MaxSizeBody() int
+	SetMaxSizeBody(maxSizeBody int) Gozzle
 }
 
 // Configuration represents a JSON-friendly gozzle configuration
@@ -38,23 +40,29 @@ type Configuration struct {
 }
 
 // NewGozzle creates a new Gozzle object
-func NewGozzle(maxSizeBody int) Gozzle {
+func NewGozzle() Gozzle {
 	return &gozzle{
-		maxSizeBody: maxSizeBody,
-		client:      &http.Client{},
+		client: &http.Client{},
 	}
 }
 
 // NewGozzleFromConfiguration creates a new Gozzle object based on a configuration
 func NewGozzleFromConfiguration(c Configuration) Gozzle {
-	return NewGozzle(
-		c.MaxSizeBody,
-	)
+	return NewGozzle().SetMaxSizeBody(c.MaxSizeBody)
 }
 
 type gozzle struct {
 	maxSizeBody int
 	client      *http.Client
+}
+
+func (g *gozzle) SetMaxSizeBody(maxSizeBody int) Gozzle {
+	g.maxSizeBody = maxSizeBody
+	return g
+}
+
+func (g *gozzle) MaxSizeBody() int {
+	return g.maxSizeBody
 }
 
 // Exec executes a set of requests

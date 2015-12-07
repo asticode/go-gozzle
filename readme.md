@@ -16,8 +16,8 @@ Run the following command:
         "github.com/asticode/go-gozzle/gozzle"
     )
     
-    // Create gozzle without a maximum body size for the response
-    g := gozzle.NewGozzle(0)
+    // Create gozzle
+    g := gozzle.NewGozzle()
     
     // Create a request set
     reqSet := gozzle.NewRequestSet()

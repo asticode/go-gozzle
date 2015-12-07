@@ -56,7 +56,7 @@ func TestExec(t *testing.T) {
 	}
 
 	// Create gozzle
-	g := NewGozzle(0)
+	g := NewGozzle()
 
 	// Execute requests
 	respSet := g.Exec(reqSet)
@@ -95,7 +95,7 @@ func TestExecRequestBeforeHandler(t *testing.T) {
 	reqSet.AddRequest(req)
 
 	// Create gozzle
-	g := NewGozzle(0)
+	g := NewGozzle()
 
 	// Execute requests
 	respSet := g.Exec(reqSet)
@@ -124,7 +124,7 @@ func TestExecRequestError(t *testing.T) {
 	reqSet.AddRequest(req2)
 
 	// Create gozzle
-	g := NewGozzle(0)
+	g := NewGozzle()
 
 	// Execute requests
 	respSet := g.Exec(reqSet)
