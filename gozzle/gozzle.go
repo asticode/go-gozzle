@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"io/ioutil"
 )
 
 // Constants
@@ -109,6 +110,7 @@ func (g gozzle) execRequest(req Request) Response {
 
 	// Get body
 	b, e := body(req)
+	defer b.Close()
 	if e != nil {
 		return NewResponseError(e)
 	}
@@ -122,6 +124,7 @@ func (g gozzle) execRequest(req Request) Response {
 	if e != nil {
 		return NewResponseError(e)
 	}
+	httpReq.Close = true
 
 	// Add headers
 	headers(req, httpReq)
@@ -170,14 +173,18 @@ func query(r Request) string {
 	return query
 }
 
-func body(r Request) (io.Reader, error) {
+func body(r Request) (io.ReadCloser, error) {
 	// Initialize
 	var body []byte
 	var e error
 
 	// Encode body
 	if r.BodyReader() != nil {
-		return r.BodyReader(), e
+		bodyReader, ok := r.BodyReader().(io.ReadCloser)
+		if !ok {
+			bodyReader = ioutil.NopCloser(r.BodyReader())
+		}
+		return bodyReader, e
 	} else if r.Body() != nil {
 		// Get body reader
 		if r.GetHeader("Content-Type") == "application/xml" {
@@ -190,7 +197,7 @@ func body(r Request) (io.Reader, error) {
 	}
 
 	// Return
-	return bytes.NewBuffer(body), e
+	return ioutil.NopCloser(bytes.NewBuffer(body)), e
 }
 
 func headers(r Request, hr *http.Request) {
