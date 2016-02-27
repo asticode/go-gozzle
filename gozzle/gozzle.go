@@ -9,12 +9,9 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
-	"net/http"
-	"net/url"
-	"sort"
-	"strings"
-	"sync"
 	"io/ioutil"
+	"net/http"
+	"sync"
 )
 
 // Constants
@@ -118,7 +115,7 @@ func (g gozzle) execRequest(req Request) Response {
 	// Create http request
 	httpReq, e := http.NewRequest(
 		req.Method(),
-		req.Path()+query(req),
+		req.FullPath(),
 		b,
 	)
 	if e != nil {
@@ -147,30 +144,6 @@ func (g gozzle) execRequest(req Request) Response {
 
 	// Return
 	return resp
-}
-
-func query(r Request) string {
-	var query string
-	if len(r.Query()) > 0 {
-		// Add "?"
-		query += "?"
-
-		// Make sure query parameters are sorted
-		var keys []string
-		for k, _ := range r.Query() {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-
-		// Loop through keys
-		for _, k := range keys {
-			query += url.QueryEscape(k) + "=" + url.QueryEscape(r.GetQuery(k)) + "&"
-		}
-
-		// Trim "&"
-		query = strings.Trim(query, "&")
-	}
-	return query
 }
 
 func body(r Request) (io.ReadCloser, error) {

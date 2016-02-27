@@ -7,6 +7,10 @@ package gozzle
 import (
 	"io"
 
+	"net/url"
+	"sort"
+	"strings"
+
 	"github.com/asticode/go-toolbox/array"
 )
 
@@ -36,6 +40,7 @@ type Request interface {
 	SetBeforeHandler(f func(r Request) bool) Request
 	AfterHandler() func(req Request, resp Response)
 	SetAfterHandler(f func(req Request, resp Response)) Request
+	FullPath() string
 }
 
 // NewRequest creates a new request
@@ -192,4 +197,29 @@ func (r *request) SetAfterHandler(f func(req Request, resp Response)) Request {
 // SetAfterHandler returns the handler executed after sending the request
 func (r *request) AfterHandler() func(req Request, resp Response) {
 	return r.afterHandler
+}
+
+// FullPath returns the path + query parameters
+func (r *request) FullPath() string {
+	var query string
+	if len(r.Query()) > 0 {
+		// Add "?"
+		query += "?"
+
+		// Make sure query parameters are sorted
+		var keys []string
+		for k, _ := range r.Query() {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		// Loop through keys
+		for _, k := range keys {
+			query += url.QueryEscape(k) + "=" + url.QueryEscape(r.GetQuery(k)) + "&"
+		}
+
+		// Trim "&"
+		query = strings.Trim(query, "&")
+	}
+	return r.path + query
 }
