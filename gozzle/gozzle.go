@@ -80,16 +80,10 @@ func (g gozzle) Exec(reqSet RequestSet) ResponseSet {
 	// Loop through requests
 	for _, name := range reqNames {
 		go func(req Request) {
-			// Execute request
-			resp := g.execRequest(req)
-
-			// Add response
-			if resp != nil {
+			defer wg.Done()
+			if resp := g.execRequest(req); resp != nil {
 				respSet.AddResponse(req, resp)
 			}
-
-			// Update wait group
-			wg.Done()
 		}(reqSet.GetRequest(name))
 	}
 
@@ -115,31 +109,28 @@ func (g gozzle) ExecWithLogger(reqSet RequestSet, f xlog.F) ResponseSet {
 	// Create wait group
 	wg := sync.WaitGroup{}
 	wg.Add(len(reqNames))
+	f["wg_init_len"] = len(reqNames)
 	f["duration_gozzle_init_wg"] = time.Since(n)
 	n = time.Now()
 
 	// Loop through requests
+	m := sync.Mutex{}
 	for _, name := range reqNames {
-		go func(req Request) {
-			// Execute request
-			resp := g.execRequestWithLogger(req, f)
+		go func(req Request, f xlog.F) {
+			defer func() {
+				wg.Done()
+				m.Lock()
+				f["wg_done_" + req.Name()] = true
+				m.Unlock()
+			}()
 			now := time.Now()
-
-			f[fmt.Sprintf("duration_gozzle_request_executed_%s", req.Name())] = time.Since(now)
-			now = time.Now()
-
-			// Add response
-			if resp != nil {
+			if resp := g.execRequestWithLogger(req, f); resp != nil {
+				m.Lock()
+				f["duration_gozzle_request_executed_" + req.Name()] = time.Since(now)
+				m.Unlock()
 				respSet.AddResponse(req, resp)
 			}
-
-			f[fmt.Sprintf("duration_gozzle_response_added_%s", req.Name())] = time.Since(now)
-			now = time.Now()
-
-			// Update wait group
-			wg.Done()
-			f[fmt.Sprintf("duration_gozzle_done_wait_%s", req.Name())] = time.Since(now)
-		}(reqSet.GetRequest(name))
+		}(reqSet.GetRequest(name), f)
 	}
 
 	f["duration_gozzle_start_wait_wg"] = time.Since(n)

@@ -14,6 +14,7 @@ import (
 	"bytes"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/rs/xlog"
 )
 
 func TestExec(t *testing.T) {
@@ -98,7 +99,7 @@ func TestExecRequestBeforeHandler(t *testing.T) {
 	g := NewGozzle()
 
 	// Execute requests
-	respSet := g.Exec(reqSet)
+	respSet := g.ExecWithLogger(reqSet, xlog.F{})
 
 	// Assert
 	assert.Len(t, respSet.Names(), 0)
