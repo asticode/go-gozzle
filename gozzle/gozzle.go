@@ -25,11 +25,6 @@ const (
 	MethodHead    string = "HEAD"
 )
 
-// Vars
-var (
-	mapLock sync.Mutex
-)
-
 // Gozzle represents an object capable of executing a set of requests
 type Gozzle interface {
 	Exec(reqSet RequestSet) ResponseSet

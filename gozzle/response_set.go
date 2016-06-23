@@ -4,6 +4,8 @@
 
 package gozzle
 
+import "sync"
+
 // ResponseSet represents a set of responses
 type ResponseSet interface {
 	Names() []string
@@ -15,15 +17,20 @@ type ResponseSet interface {
 
 // NewResponseSet creates a new response set
 func NewResponseSet() ResponseSet {
-	return &responseSet{}
+	return &responseSet{
+		responses: make(map[string]Response),
+	}
 }
 
-type responseSet map[string]Response
+type responseSet struct {
+	responses map[string]Response
+	mutex     sync.Mutex
+}
 
 // Responses returns the list of names
 func (respSet *responseSet) Names() []string {
 	var n []string
-	for k := range *respSet {
+	for k := range respSet.responses {
 		n = append(n, k)
 	}
 	return n
@@ -31,27 +38,27 @@ func (respSet *responseSet) Names() []string {
 
 // AddResponse adds a new response to the response set
 func (respSet *responseSet) AddResponse(req Request, resp Response) ResponseSet {
-	mapLock.Lock()
-	(*respSet)[req.Name()] = resp
-	mapLock.Unlock()
+	respSet.mutex.Lock()
+	respSet.responses[req.Name()] = resp
+	respSet.mutex.Unlock()
 	return respSet
 }
 
 // GetResponse returns a request based on its name
 func (respSet *responseSet) GetResponse(name string) Response {
-	return (*respSet)[name]
+	return respSet.responses[name]
 }
 
 // DelResponse removes a request from the request set
 func (respSet *responseSet) DelResponse(name string) ResponseSet {
-	delete((*respSet), name)
+	delete(respSet.responses, name)
 	return respSet
 }
 
 // Close closes the responses in the response set
 func (respSet *responseSet) Close() map[string]error {
 	errors := make(map[string]error)
-	for k, v := range *respSet {
+	for k, v := range respSet.responses {
 		errors[k] = v.Close()
 	}
 	return errors

@@ -14,10 +14,12 @@ import (
 func TestResponseSet(t *testing.T) {
 	// Initialize
 	respSet := responseSet{
-		"1": &response{},
-		"2": &response{},
-		"3": &response{},
-		"4": &response{},
+		responses: map[string]Response{
+			"1": &response{},
+			"2": &response{},
+			"3": &response{},
+			"4": &response{},
+		},
 	}
 
 	// Assert names
