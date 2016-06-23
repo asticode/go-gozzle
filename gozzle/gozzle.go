@@ -12,9 +12,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
-	"github.com/rs/xlog"
-	"time"
-	"fmt"
 )
 
 // Constants
@@ -28,10 +25,14 @@ const (
 	MethodHead    string = "HEAD"
 )
 
+// Vars
+var (
+	mapLock sync.Mutex
+)
+
 // Gozzle represents an object capable of executing a set of requests
 type Gozzle interface {
 	Exec(reqSet RequestSet) ResponseSet
-	ExecWithLogger(reqSet RequestSet, f xlog.F) ResponseSet
 	MaxSizeBody() int
 	SetMaxSizeBody(maxSizeBody int) Gozzle
 }
@@ -94,57 +95,6 @@ func (g gozzle) Exec(reqSet RequestSet) ResponseSet {
 	return respSet
 }
 
-// ExecWithLogger executes a set of requests and logs requests duration
-func (g gozzle) ExecWithLogger(reqSet RequestSet, f xlog.F) ResponseSet {
-	// Log total duration
-	defer func(t time.Time) {
-		f["duration_gozzle_total"] = time.Since(t)
-	}(time.Now())
-	n := time.Now()
-
-	// Initialize
-	respSet := NewResponseSet()
-	reqNames := reqSet.Names()
-
-	// Create wait group
-	wg := sync.WaitGroup{}
-	wg.Add(len(reqNames))
-	f["wg_init_len"] = len(reqNames)
-	f["duration_gozzle_init_wg"] = time.Since(n)
-	n = time.Now()
-
-	// Loop through requests
-	m := sync.Mutex{}
-	for _, name := range reqNames {
-		go func(req Request, f xlog.F) {
-			defer func() {
-				wg.Done()
-				m.Lock()
-				f["wg_done_" + req.Name()] = true
-				m.Unlock()
-			}()
-			now := time.Now()
-			if resp := g.execRequestWithLogger(req, f); resp != nil {
-				m.Lock()
-				f["duration_gozzle_request_executed_" + req.Name()] = time.Since(now)
-				m.Unlock()
-				respSet.AddResponse(req, resp)
-			}
-		}(reqSet.GetRequest(name), f)
-	}
-
-	f["duration_gozzle_start_wait_wg"] = time.Since(n)
-	n = time.Now()
-
-	// Wait
-	wg.Wait()
-
-	f["duration_gozzle_done_wait_wg"] = time.Since(n)
-
-	// Return
-	return respSet
-}
-
 func (g gozzle) execRequest(req Request) Response {
 	// Before handler
 	if req.BeforeHandler() != nil {
@@ -190,79 +140,6 @@ func (g gozzle) execRequest(req Request) Response {
 	if req.AfterHandler() != nil {
 		req.AfterHandler()(req, resp)
 	}
-
-	// Return
-	return resp
-}
-
-func (g gozzle) execRequestWithLogger(req Request, f xlog.F) Response {
-	// Init
-	now := time.Now()
-
-	// Before handler
-	if req.BeforeHandler() != nil {
-		cont := req.BeforeHandler()(req)
-		if !cont {
-			return nil
-		}
-	}
-
-	f[fmt.Sprintf("duration_gozzle_before_handler_%s", req.Name())] = time.Since(now)
-	now = time.Now()
-
-	// Get body
-	b, e := body(req)
-	defer b.Close()
-	if e != nil {
-		return NewResponseError(e)
-	}
-
-	f[fmt.Sprintf("duration_gozzle_body_%s", req.Name())] = time.Since(now)
-	now = time.Now()
-
-	// Create http request
-	httpReq, e := http.NewRequest(
-		req.Method(),
-		req.FullPath(),
-		b,
-	)
-	if e != nil {
-		return NewResponseError(e)
-	}
-	httpReq.Close = true
-
-	f[fmt.Sprintf("duration_gozzle_create_request_%s", req.Name())] = time.Since(now)
-	now = time.Now()
-
-	// Add headers
-	headers(req, httpReq)
-
-	f[fmt.Sprintf("duration_gozzle_headers_%s", req.Name())] = time.Since(now)
-	now = time.Now()
-
-	// TODO Add timeout and context
-
-	// Send request
-	httpResp, e := g.client.Do(httpReq)
-	if e != nil {
-		return NewResponseError(e)
-	}
-
-	f[fmt.Sprintf("duration_gozzle_do_request_%s", req.Name())] = time.Since(now)
-	now = time.Now()
-
-	// Create response
-	resp := NewResponse(httpResp, g.maxSizeBody)
-
-	f[fmt.Sprintf("duration_gozzle_create_response_%s", req.Name())] = time.Since(now)
-	now = time.Now()
-
-	// After handler
-	if req.AfterHandler() != nil {
-		req.AfterHandler()(req, resp)
-	}
-
-	f[fmt.Sprintf("duration_gozzle_after_handler_%s", req.Name())] = time.Since(now)
 
 	// Return
 	return resp

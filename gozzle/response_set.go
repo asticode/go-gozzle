@@ -31,7 +31,9 @@ func (respSet *responseSet) Names() []string {
 
 // AddResponse adds a new response to the response set
 func (respSet *responseSet) AddResponse(req Request, resp Response) ResponseSet {
+	mapLock.Lock()
 	(*respSet)[req.Name()] = resp
+	mapLock.Unlock()
 	return respSet
 }
 
