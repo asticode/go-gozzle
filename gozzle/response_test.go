@@ -64,3 +64,21 @@ func TestNewResponseBodyReader(t *testing.T) {
 	assert.Len(t, b1, len(b))
 	assert.Len(t, b2, max)
 }
+
+func TestNewResponseBody(t *testing.T) {
+	// Initialize
+	b := []byte("testmessage")
+
+	// New responses
+	resp := NewResponse(&http.Response{Body: mockedIoReaderCloser(b)}, 0)
+
+	// Get body
+	b1, err := resp.Body()
+	assert.NoError(t, err)
+	assert.Equal(t, b, b1)
+
+	// Check body reader is intact
+	b1, err = ioutil.ReadAll(resp.BodyReader())
+	assert.NoError(t, err)
+	assert.Equal(t, b, b1)
+}

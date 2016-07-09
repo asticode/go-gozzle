@@ -25,6 +25,7 @@ type Response interface {
 	StatusCode() int
 	Header() http.Header
 	BodyReader() io.ReadCloser
+	Body() ([]byte, error)
 	Close() error
 }
 
@@ -97,12 +98,26 @@ func (r *response) Header() http.Header {
 	return r.originalResponse.Header
 }
 
-// Body returns the response body
+// BodyReader returns the response BodyReader
 func (r *response) BodyReader() io.ReadCloser {
 	if r.originalResponse == nil {
 		return ioutil.NopCloser(bytes.NewReader([]byte{}))
 	}
 	return r.originalResponse.Body
+}
+
+// Body returns the response body without compromising the BodyReader
+func (r *response) Body() ([]byte, error) {
+	var b []byte
+	if r.originalResponse == nil {
+		return b, nil
+	}
+	c, err := ioutil.ReadAll(r.originalResponse.Body)
+	if err != nil {
+		return b, err
+	}
+	r.originalResponse.Body = ioutil.NopCloser(bytes.NewReader(c))
+	return c, nil
 }
 
 // Close closes the response
